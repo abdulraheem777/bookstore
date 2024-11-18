@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Spinner from '../components/Spinner';
-import { Link } from 'react-router-dom';
-import { AiOutlineEdit } from 'react-icons/ai';
-import { BsInfoCircle } from 'react-icons/bs';
-import { MdOutlineAddBox, MdOutlineDelete } from 'react-icons/md';
 import BooksTable from '../components/home/BooksTable';
 import BooksCard from '../components/home/BooksCard';
+import SearchBar from '../components/home/SearchBar';
+import Header from '../components/Header';
+import GlassmorphicCard from '../components/common/GlassmorphicCard';
 
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showType, setShowType] = useState('table');
+  const [filteredBooks, setFilteredBooks] = useState([]);
 
   useEffect(() => {
     setLoading(true);
@@ -19,6 +19,7 @@ const Home = () => {
       .get('http://localhost:5555/books')
       .then((response) => {
         setBooks(response.data.data);
+        setFilteredBooks(response.data.data);
         setLoading(false);
       })
       .catch((error) => {
@@ -27,35 +28,67 @@ const Home = () => {
       });
   }, []);
 
+  const handleSearch = (searchTerm) => {
+    const filtered = books.filter(
+      (book) =>
+        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredBooks(filtered);
+  };
+
   return (
-    <div className='p-4'>
-      <div className='flex justify-center items-center gap-x-4'>
-        <button
-          className='bg-sky-300 hover:bg-sky-600 px-4 py-1 rounded-lg'
-          onClick={() => setShowType('table')}
-        >
-          Table
-        </button>
-        <button
-          className='bg-sky-300 hover:bg-sky-600 px-4 py-1 rounded-lg'
-          onClick={() => setShowType('card')}
-        >
-          Card
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-sky-50">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <GlassmorphicCard className="p-8 rounded-xl">
+          <div className="mb-8 space-y-6">
+            <SearchBar onSearch={handleSearch} />
+            <div className="flex justify-center gap-4">
+              <button
+                className={`px-6 py-2 rounded-lg transition duration-200 ${
+                  showType === 'table'
+                    ? 'bg-sky-600 text-white shadow-md'
+                    : 'bg-white text-sky-600 border border-sky-600 hover:bg-sky-50'
+                }`}
+                onClick={() => setShowType('table')}
+              >
+                Table View
+              </button>
+              <button
+                className={`px-6 py-2 rounded-lg transition duration-200 ${
+                  showType === 'card'
+                    ? 'bg-sky-600 text-white shadow-md'
+                    : 'bg-white text-sky-600 border border-sky-600 hover:bg-sky-50'
+                }`}
+                onClick={() => setShowType('card')}
+              >
+                Card View
+              </button>
+            </div>
+          </div>
+
+          <div className="backdrop-blur-md bg-white/40 rounded-xl p-6 border border-white/20">
+            <h1 className="text-2xl font-semibold text-gray-800/90 mb-6">
+              Books Collection ({filteredBooks.length})
+            </h1>
+            
+            {loading ? (
+              <div className="flex justify-center">
+                <Spinner />
+              </div>
+            ) : (
+              <div className={showType === 'table' ? 'overflow-x-auto' : ''}>
+                {showType === 'table' ? (
+                  <BooksTable books={filteredBooks} />
+                ) : (
+                  <BooksCard books={filteredBooks} />
+                )}
+              </div>
+            )}
+          </div>
+        </GlassmorphicCard>
       </div>
-      <div className='flex justify-between items-center'>
-        <h1 className='text-3xl my-8'>Books List</h1>
-        <Link to='/books/create'>
-          <MdOutlineAddBox className='text-sky-800 text-4xl' />
-        </Link>
-      </div>
-      {loading ? (
-        <Spinner />
-      ) : showType === 'table' ? (
-        <BooksTable books={books} />
-      ) : (
-        <BooksCard books={books} />
-      )}
     </div>
   );
 };
